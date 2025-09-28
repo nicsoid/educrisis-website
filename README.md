@@ -45,22 +45,26 @@ educrisis-website/
 ## 📋 Step-by-Step Setup
 
 ### 1. Create Project Directory
+
 ```bash
 mkdir educrisis-website
 cd educrisis-website
 ```
 
 ### 2. Copy All Files
+
 Copy each file from the artifacts into the corresponding location in your project structure.
 
 **✅ All files are ready to copy-paste exactly as provided**
 
 ### 3. Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### 4. Run Development Server
+
 ```bash
 npm run dev
 ```
@@ -68,19 +72,75 @@ npm run dev
 Visit: http://localhost:5173
 
 ### 5. Build for Production
+
 ```bash
 npm run build
 ```
 
-## 🐳 Docker Deployment
+## 💻 Local Development (Docker)
+
+### Quick Start
+
+```bash
+# Start development server
+docker-compose -f docker-compose.dev.yml up
+
+# Or use the helper script
+chmod +x dev.sh
+./dev.sh
+```
+
+**Access your app:** http://localhost:3000
+
+**Features:**
+
+- ✅ Hot reload (changes appear instantly)
+- ✅ Source maps for debugging
+- ✅ Fast development builds
+- ✅ Runs on port 3000
+
+### Development Commands
+
+```bash
+# Start dev server
+docker-compose -f docker-compose.dev.yml up
+
+# Stop dev server
+docker-compose -f docker-compose.dev.yml down
+
+# Rebuild after changes
+docker-compose -f docker-compose.dev.yml up --build
+
+# View logs
+docker-compose -f docker-compose.dev.yml logs -f
+
+# Preview production build locally
+docker-compose -f docker-compose.dev.yml --profile preview up preview
+# Access at: http://localhost:8080
+```
+
+## 🐳 Docker Deployment (Production)
 
 ### Method 1: Using Deploy Script (Recommended)
+
 ```bash
 chmod +x deploy.sh
 sudo ./deploy.sh
 ```
 
+**Custom Ports (to avoid conflicts):**
+
+- HTTP: Port **91** (instead of 80)
+- HTTPS: Port **9443** (instead of 443)
+- Email ports: 2525, 1143, 4465, 5587, 9993 (if self-hosting)
+
+**Access your site:**
+
+- Direct: `http://YOUR_IP:91`
+- With reverse proxy: `http://educrisis.org`
+
 ### Method 2: Manual Docker Commands
+
 ```bash
 # Build image
 docker build -t educrisis-web .
@@ -98,25 +158,27 @@ docker-compose down
 ## 📧 Email Configuration
 
 ### Option A: Third-Party Email (Recommended)
+
 1. Sign up with Google Workspace, Microsoft 365, or Zoho
 2. Add their MX records to your DNS
 3. Configure in Footer.jsx:
 
 ```javascript
 const handleSubscribe = async () => {
-  const response = await fetch('/api/subscribe', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
+  const response = await fetch("/api/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
   });
   if (response.ok) {
-    alert('Successfully subscribed!');
-    setEmail('');
+    alert("Successfully subscribed!");
+    setEmail("");
   }
 };
 ```
 
 ### Option B: Self-Hosted Email
+
 1. Uncomment mailserver section in `docker-compose.yml`
 2. Run: `docker-compose up -d mailserver`
 3. Create accounts: `docker exec -it educrisis-mail setup email add info@educrisis.org password`
@@ -147,27 +209,34 @@ docker-compose run --rm certbot certonly \
 ## ✏️ Customizing Content
 
 ### Edit Translations
+
 Edit the JSON files in `src/locales/`:
+
 - `en.json` - English
-- `uk.json` - Ukrainian  
+- `uk.json` - Ukrainian
 - `ru.json` - Russian
 - `zh.json` - Chinese
 
 ### Add Page Content
+
 Edit individual page files in `src/pages/`:
+
 ```javascript
 // Example: src/pages/HomePage.jsx
 export default function HomePage() {
   const { t } = useI18n();
-  
+
   return (
     <div className="container mx-auto px-4 py-6 md:py-8">
-      <h1 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6" style={{ color: '#002866' }}>
-        {t('homeTitle')}
+      <h1
+        className="text-2xl md:text-4xl font-bold mb-4 md:mb-6"
+        style={{ color: "#002866" }}
+      >
+        {t("homeTitle")}
       </h1>
-      <div className="prose max-w-none" style={{ color: '#002866' }}>
-        <p className="text-base md:text-lg mb-4">{t('homeContent')}</p>
-        
+      <div className="prose max-w-none" style={{ color: "#002866" }}>
+        <p className="text-base md:text-lg mb-4">{t("homeContent")}</p>
+
         {/* Add your custom content here */}
         <section className="my-8">
           <h2 className="text-xl font-bold mb-4">Your Section Title</h2>
@@ -182,14 +251,16 @@ export default function HomePage() {
 ## 🎨 Styling Guide
 
 The website uses:
+
 - **Primary Color**: #002866 (Dark Blue)
 - **Accent Color**: #FFEE00 (Yellow)
 - **Font**: Poppins, sans-serif
 - **Framework**: Tailwind CSS
 
 ### Adding Custom Styles
+
 ```jsx
-<div className="my-custom-section" style={{ color: '#002866' }}>
+<div className="my-custom-section" style={{ color: "#002866" }}>
   <h2 className="text-2xl font-bold mb-4">Section Title</h2>
   <p className="text-lg">Content here...</p>
 </div>
@@ -198,11 +269,13 @@ The website uses:
 ## 🔄 Updating Website
 
 ### Local Changes
+
 1. Edit files
 2. Run `npm run build`
 3. Test with `npm run preview`
 
 ### Production Update
+
 ```bash
 # Pull latest code
 git pull origin main
@@ -214,6 +287,7 @@ docker-compose up -d --build web
 ## 🛠️ Troubleshooting
 
 ### Build Errors
+
 ```bash
 # Clear cache and rebuild
 rm -rf node_modules package-lock.json
@@ -222,6 +296,7 @@ npm run build
 ```
 
 ### Docker Issues
+
 ```bash
 # Check logs
 docker-compose logs web
@@ -235,6 +310,7 @@ docker-compose up -d --build
 ```
 
 ### Port Already in Use
+
 ```bash
 # Find process using port 80
 sudo lsof -i :80
@@ -287,6 +363,7 @@ chmod +x deploy.sh                # Make script executable
 ## 🎉 You're Done!
 
 Your website is now ready with:
+
 - ✅ Multi-language support (EN, UK, RU, ZH)
 - ✅ Responsive design (mobile, tablet, desktop)
 - ✅ Docker containerization
