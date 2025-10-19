@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     host: "0.0.0.0", // Listen on all interfaces for Docker
     port: 5173,
+    allowedHosts: ["73ff9262695f.ngrok-free.app"],
     watch: {
       usePolling: true, // Better file watching in Docker
     },

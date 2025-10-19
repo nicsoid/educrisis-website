@@ -3,21 +3,19 @@ import UkraineMap from "../components/UkraineMap";
 import PartnersSlider from "../components/PartnersSlider";
 import { useI18n } from "../context/I18nContext";
 
-//const { t } = useI18n();
-
 const STATS_DATA = [
   {
-    value: "399+",
-    label: "EDUCATIONAL INSTITUTION DESTROYED",
-    color: "#FBBF24",
-  }, // Amber-400
+    value: "365",
+    label: "EDUCATIONAL INSTITUTIONS DESTROYED",
+    color: "#06134fff",
+  }, // Assuming red for destroyed
   {
-    value: "3897+",
+    value: "3798",
     label: "EDUCATIONAL INSTITUTIONS DAMAGED",
-    color: "#EF4444",
-  }, // Red-500
-  // { value: "35%", label: "Learning moved online", color: "#3B82F6" }, // Blue-500
+    color: "#091d62ff",
+  }, // Assuming red for damaged
 ];
+
 const TEXT_DATA = {
   headline: "Help Resolve Education Crisis With EduCrisis",
   p1: "To continue to raise international awareness of the significance in academic pathways of how important education is and how central it is to national identity, social cohesion, family and to the future of Ukraine",
@@ -25,8 +23,6 @@ const TEXT_DATA = {
     "Of the nearly 4 million schoolchildren, about 800,000 studied full-time, 900,000 in a mixed form, and more than 2.2 million remotely.",
   p3: "Among them are those who study only at a local school and those who simultaneously receive education in Ukraine.",
   p4: "Of these children, between 500 and 700 thousand studied abroad.",
-  p5: "4296 education institutions have suffered bombing and shelling, - and 399 of them have been destroyed completely.",
-  source: "source",
 };
 
 // Custom hook for the staggered left/right text reveal animation
@@ -73,46 +69,37 @@ export default function HomePage() {
         </div>
 
         {/* ======================= STATS AND HEADLINE (Left/Right Reveal) ======================= */}
-        <div className="grid md:grid-cols-2 gap-16 mb-20 items-start">
+        <div className="grid md:grid-cols-2 gap-12 mb-16">
           {/* LEFT COLUMN: Combined Stats and Headline Text (Loads from Left) */}
           <div className={`space-y-4 ${leftClasses}`}>
             {/* Headline Block with Icon (Simulated) */}
             <div className="flex items-start space-x-4">
               {/* Placeholder for the clock/sun icon */}
-              <div className="relative flex-shrink-0 w-32 h-32 md:w-50 md:h-50 bg-[#0066CC] rounded-3xl p-4 shadow-xl flex flex-col items-center justify-center">
-                {/* <Zap className="w-8 h-8 text-yellow-400 mb-2" />
-                    <span className="text-4xl font-extrabold text-white leading-none">
-                        2,100+
-                    </span>
-                    <span className="text-xs font-semibold text-indigo-200 mt-1 text-center">
-                        Damaged Schools
-                    </span> */}
+              <div className="w-[250] rounded-full bg-yellow-400 flex items-center justify-center">
+                {/* Small icon inside the circle */}
                 <img src="/assets/educrisis-logo-tree.svg" />
               </div>
-              <div className="text-left flex-1 pt-2">
-                <h2 className="text-4xl font-extrabold text-[#0066CC] mb-4 leading-tight">
-                  {t("homepage1")}
+              <div className="text-left">
+                <h2 className="text-2xl font-bold text-[#0066CC] mb-2">
+                  {TEXT_DATA.headline}
                 </h2>
                 <p className="text-lg leading-relaxed text-[#002866]">
-                  {t("homepage2")}
+                  {TEXT_DATA.p1}
                 </p>
               </div>
             </div>
 
             {/* Separate Stats Block */}
-            <div className="grid grid-cols-3 gap-6 pt-4 border-t border-gray-200">
+            <div className="pt-4 space-y-2">
               {STATS_DATA.map((item, index) => (
-                <div
-                  key={index}
-                  className="text-center md:text-left md:pl-40 pl-16"
-                >
+                <div key={index} className="text-left">
                   <p
-                    className="text-4xl font-extrabold tracking-tight mb-1"
+                    className="text-4xl font-extrabold"
                     style={{ color: item.color }}
                   >
                     {item.value}
                   </p>
-                  <p className="text-sm font-semibold text-[#002866] uppercase tracking-wider">
+                  <p className="text-lg font-semibold text-[#002866]">
                     {item.label}
                   </p>
                 </div>
@@ -121,30 +108,17 @@ export default function HomePage() {
           </div>
 
           {/* RIGHT COLUMN: DETAIL TEXT (Loads from Right) */}
-          <div
-            className={`space-y-6 pt-4 text-left ${rightClasses} border-l-4 border-yellow-400 pl-6 h-full flex flex-col justify-between`}
-          >
-            <div>
-              <p className="text-lg leading-relaxed text-[#002866] mb-4">
-                {t("homepage3")}
-              </p>
-              <p className="text-lg leading-relaxed text-[#002866] mb-4">
-                {t("homepage4")}
-              </p>
-              <p className="text-lg leading-relaxed text-[#002866]">
-                {t("homepage5")}
-              </p>
-              <p className="text-lg leading-relaxed text-[#002866]">
-                {t("homepage8")}
-              </p>
-            </div>
-            <p className="text-xs text-gray-500 italic mt-6">
-              <noindex>
-                <a href="https://saveschools.in.ua/en/" target="_blank">
-                  {t("source")}
-                </a>
-              </noindex>
+          <div className={`space-y-4 pt-4 text-left ${rightClasses}`}>
+            <p className="text-lg leading-relaxed text-[#002866]">
+              {TEXT_DATA.p2_start}
             </p>
+            <p className="text-lg leading-relaxed text-[#002866]">
+              {TEXT_DATA.p3}
+            </p>
+            <p className="text-lg leading-relaxed text-[#002866]">
+              {TEXT_DATA.p4}
+            </p>
+            <p className="text-sm text-gray-500 mt-4">source</p>
           </div>
         </div>
 
@@ -155,31 +129,21 @@ export default function HomePage() {
         </div>
 
         {/* ======================= PHOTO GALLERY ======================= */}
-        <div className="grid md:grid-cols-2 gap-8 mb-20">
-          <div className="flex flex-col items-start">
-            <div className="w-full bg-gray-200 rounded-xl overflow-hidden shadow-lg aspect-video">
-              {/* Placeholder for School Ceremony image */}
-              <img
-                src="/assets/School_ceremony_with_celebrations_after_renovation.jpeg"
-                alt="School ceremony with celebrations after renovation"
-                className="w-full h-full object-cover"
-              />
+        <div className="grid md:grid-cols-2 gap-6 mb-20">
+          <div className="flex flex-col items-center">
+            <div className=" w-full bg-gray-300 rounded-lg overflow-hidden flex items-center justify-center">
+              <img src="/assets/School_ceremony_with_celebrations_after_renovation.jpeg" />
             </div>
-            <p className="text-sm text-gray-700 mt-3 font-medium w-full text-center">
-              {t("homepage_img1")}
+            <p className="text-sm text-gray-600 mt-2">
+              School ceremony with celebrations after renovation
             </p>
           </div>
-          <div className="flex flex-col items-start">
-            <div className="w-full bg-gray-200 rounded-xl overflow-hidden shadow-lg aspect-video">
-              {/* Placeholder for Targeted School image */}
-              <img
-                src="/assets/School_directly_targeted_by_military_force.jpeg"
-                alt="School directly targeted by military force"
-                className="w-full h-full object-cover"
-              />
+          <div className="flex flex-col items-center">
+            <div className=" w-full bg-gray-300 rounded-lg overflow-hidden flex items-center justify-center">
+              <img src="/assets/School_directly_targeted_by_military_force.jpeg" />
             </div>
-            <p className="text-sm text-gray-700 mt-3 font-medium text-center w-full text-center">
-              {t("homepage_img2")}
+            <p className="text-sm text-gray-600 mt-2">
+              School directly targeted by military force
             </p>
           </div>
         </div>
@@ -187,7 +151,7 @@ export default function HomePage() {
         {/* ======================= OUR PARTNERS (Auto-Scrolling) ======================= */}
         <div className="mb-12">
           <h2 className="text-4xl font-bold text-center mb-10 text-[#002866]">
-            {t("our_partners")}
+            Our Partners
           </h2>
           {/* This component handles the horizontal auto-scrolling logos */}
           <PartnersSlider />

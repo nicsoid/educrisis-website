@@ -1,0 +1,422 @@
+{
+  "name": "Seisbook Ingest + Export (Built-in Extractor + OpenAI Rewrite)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "seisbook/export",
+        "responseMode": "responseNode",
+        "options": {
+          "responseData": "={{$json}}",
+          "responseCode": 200
+        }
+      },
+      "id": "Webhook_Export",
+      "name": "Webhook: Export",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"query\"][\"key\"]}}",
+              "operation": "equals",
+              "value2": "={{$env.EXPORT_SECRET}}"
+            }
+          ]
+        }
+      },
+      "id": "IF_Secret_OK",
+      "name": "IF: Secret OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.GOOGLE_ALERTS_FEED_URL}}",
+        "responseFormat": "string",
+        "options": {
+          "followRedirect": true
+        }
+      },
+      "id": "HTTP_RSS",
+      "name": "HTTP: Google Alerts RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [740, 300]
+    },
+    {
+      "parameters": {
+        "feedUrl": "",
+        "options": {
+          "useRawData": true
+        }
+      },
+      "id": "RSS_Parse",
+      "name": "RSS: Parse from Raw",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [980, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Resolve real URL from Google redirect.\nreturn items.map(item => {\n  const link = item.json.link || (item.json.links && item.json.links[0] && item.json.links[0].href) || '';\n  let realUrl = link;\n  try {\n    const u = new URL(link);\n    const param = u.searchParams.get('url');\n    if (param) realUrl = decodeURIComponent(param);\n  } catch (e) {}\n  return { json: { realUrl, rssTitle: item.json.title || '', rssPublished: item.json.pubDate || item.json.isoDate || null } };\n});"
+      },
+      "id": "FN_ResolveURL",
+      "name": "FN: Resolve Real URL",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1220, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.realUrl}}",
+              "operation": "startsWith",
+              "value2": "http"
+            }
+          ]
+        }
+      },
+      "id": "IF_HTTP_URL",
+      "name": "IF: Keep HTTP(S)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$json.realUrl}}",
+        "responseFormat": "string",
+        "options": {
+          "followRedirect": true,
+          "timeout": 30
+        }
+      },
+      "id": "HTTP_Article",
+      "name": "HTTP: Fetch Article HTML",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1700, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Minimal built-in extractor (OG/Twitter + naive main text)\nfunction getMeta(content, name, attr) {\n  const re = new RegExp(`<meta[^>]+(?:${attr}=[\"']${name}[\"'][^>]*|name=[\"']${name}[\"'][^>]*|property=[\"']${name}[\"'][^>]*)content=[\"']([^\"']+)[\"'][^>]*>`, 'i');\n  const m = content.match(re);\n  return m ? m[1] : '';\n}\nfunction getTag(content, tag) {\n  const re = new RegExp(`<${tag}[^>]*>([\\\\s\\\\S]*?)<\\\\/${tag}>`, 'i');\n  const m = content.match(re);\n  return m ? m[1].replace(/<[^>]+>/g,'').trim() : '';\n}\nfunction pickFirst(){for(const v of arguments){if(v&&v.trim())return v.trim()}return ''}\nfunction extractMainText(html){\n  const cleaned = html.replace(/<script[\\s\\S]*?<\\/script>/gi,'').replace(/<style[\\s\\S]*?<\\/style>/gi,'');\n  const candidates = ['article','.article','.post-content','.entry-content','.story-body','#content','.single__content','.content__article-body'];\n  let best='';\n  for(const sel of candidates){\n    const re = new RegExp(`<[^>]*${sel.replace(/[.#]/g, m=>m==='.'?'class=\"':'id=\"')}[^>]*>[\\s\\S]*?<\\/[^>]+>`, 'gi');\n    const matches = cleaned.match(re)||[];\n    for(const block of matches){\n      const text = block.replace(/<[^>]+>/g,' ').replace(/\\s+/g,' ').trim();\n      if(text.length>best.length) best=text;\n    }\n  }\n  return best || cleaned.replace(/<[^>]+>/g,' ').replace(/\\s+/g,' ').trim();\n}\n\nreturn items.map(item=>{\n  const html = item.json.body || item.json.data || '';\n  const title = pickFirst(\n    getMeta(html, 'og:title', 'property'),\n    getMeta(html, 'twitter:title', 'name'),\n    getTag(html,'title'),\n    $json.rssTitle\n  ).slice(0,180);\n  const image = pickFirst(\n    getMeta(html,'og:image','property'),\n    getMeta(html,'twitter:image','name')\n  )||null;\n  const article = extractMainText(html);\n  return { json: { link: $json.realUrl, header: title, image, description: '', keywords: '', article, source_published_at: $json.rssPublished || null, collected_at: new Date().toISOString() } };\n});"
+      },
+      "id": "FN_Extract",
+      "name": "FN: Extract (Built-in)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1940, 300]
+    },
+    {
+      "parameters": {
+        "operation": "chat",
+        "openAIApi": {
+          "authentication": "predefinedCredentialType",
+          "credential": "OpenAI (Seisbook)"
+        },
+        "model": "={{$env.OPENAI_MODEL || \"gpt-4o-mini\"}}",
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": "={{$env.OPENAI_MAX_TOKENS || 1200}}"
+        },
+        "messages": {
+          "message": [
+            {
+              "text": "Rewrite the following marine seismic news article to be fresh wording (plagiarism-safe) while strictly preserving facts and meaning. Keep proper nouns and quotes intact where possible. Remove tracking junk/boilerplate. Respond with ONLY the rewritten article text.\n\nArticle:\n{{$json.article}}",
+              "type": "user"
+            }
+          ]
+        }
+      },
+      "id": "OpenAI_Rewrite",
+      "name": "OpenAI: Rewrite Article",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 4,
+      "position": [2180, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map(item => {\n  const rewritten = item.json.choices?.[0]?.message?.content || item.json.data || item.json.text || '';\n  const original = $json.article || '';\n  return { json: { ...$json, article: (rewritten && rewritten.length > 100) ? rewritten : original } };\n});"
+      },
+      "id": "FN_ApplyRewrite",
+      "name": "FN: Apply Rewrite",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [2420, 300]
+    },
+    {
+      "parameters": {
+        "operation": "keepItemsUpTo",
+        "limit": "={{$env.MAX_ITEMS || 100}}"
+      },
+      "id": "ItemLists_Limit",
+      "name": "Item Lists: Limit",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [2660, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const arr = $input.all().map(i => i.json);\nreturn [{ json: { status: 'ok', count: arr.length, items: arr } }];"
+      },
+      "id": "FN_BuildResponse",
+      "name": "FN: Build Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [2900, 300]
+    },
+    {
+      "parameters": {
+        "responseBody": "={{$json}}",
+        "responseCode": 200
+      },
+      "id": "Respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [3140, 300]
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "custom",
+              "cronExpression": "5 0,8,16 * * *"
+            }
+          ]
+        }
+      },
+      "id": "Cron_Ingest",
+      "name": "Cron: 3×/day",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [220, 540]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.GOOGLE_ALERTS_FEED_URL}}",
+        "responseFormat": "string",
+        "options": {
+          "followRedirect": true
+        }
+      },
+      "id": "HTTP_RSS_Cron",
+      "name": "HTTP: RSS (Cron)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [480, 540]
+    },
+    {
+      "parameters": {
+        "feedUrl": "",
+        "options": {
+          "useRawData": true
+        }
+      },
+      "id": "RSS_Parse_Cron",
+      "name": "RSS: Parse (Cron)",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [740, 540]
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map(item => {\n  const link = item.json.link || (item.json.links && item.json.links[0] && item.json.links[0].href) || '';\n  let realUrl = link;\n  try {\n    const u = new URL(link);\n    const param = u.searchParams.get('url');\n    if (param) realUrl = decodeURIComponent(param);\n  } catch (e) {}\n  return { json: { realUrl, rssTitle: item.json.title || '', rssPublished: item.json.pubDate || item.json.isoDate || null } };\n});"
+      },
+      "id": "FN_ResolveURL_Cron",
+      "name": "FN: Resolve URL (Cron)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [980, 540]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.realUrl}}",
+              "operation": "startsWith",
+              "value2": "http"
+            }
+          ]
+        }
+      },
+      "id": "IF_HTTP_URL_Cron",
+      "name": "IF: Keep HTTP(S) (Cron)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1220, 540]
+    },
+    {
+      "parameters": {
+        "url": "={{$json.realUrl}}",
+        "responseFormat": "string",
+        "options": {
+          "followRedirect": true,
+          "timeout": 30
+        }
+      },
+      "id": "HTTP_Article_Cron",
+      "name": "HTTP: Fetch Article (Cron)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1460, 540]
+    },
+    {
+      "parameters": {
+        "functionCode": "function getMeta(content, name, attr){const re=new RegExp(`<meta[^>]+(?:${attr}=[\"']${name}[\"'][^>]*|name=[\"']${name}[\"'][^>]*|property=[\"']${name}[\"'][^>]*)content=[\"']([^\"']+)[\"'][^>]*>`, 'i');const m=content.match(re);return m?m[1]:''}\nfunction getTag(content,tag){const re=new RegExp(`<${tag}[^>]*>([\\\\s\\\\S]*?)<\\\\/${tag}>`,'i');const m=content.match(re);return m?m[1].replace(/<[^>]+>/g,'').trim():''}\nfunction pickFirst(){for(const v of arguments){if(v&&v.trim())return v.trim()}return ''}\nfunction extractMainText(html){const cleaned=html.replace(/<script[\\s\\S]*?<\\/script>/gi,'').replace(/<style[\\s\\S]*?<\\/style>/gi,'');const candidates=['article','.article','.post-content','.entry-content','.story-body','#content','.single__content','.content__article-body'];let best='';for(const sel of candidates){const re=new RegExp(`<[^>]*${sel.replace(/[.#]/g,m=>m==='.'?'class=\"':'id=\"')}[^>]*>[\\s\\S]*?<\\/[^>]+>`,'gi');const matches=cleaned.match(re)||[];for(const block of matches){const text=block.replace(/<[^>]+>/g,' ').replace(/\\s+/g,' ').trim();if(text.length>best.length)best=text;}}return best||cleaned.replace(/<[^>]+>/g,' ').replace(/\\s+/g,' ').trim()}\nreturn items.map(item=>{const html=item.json.body||item.json.data||'';const title=pickFirst(getMeta(html,'og:title','property'),getMeta(html,'twitter:title','name'),getTag(html,'title'),$json.rssTitle).slice(0,180);const image=pickFirst(getMeta(html,'og:image','property'),getMeta(html,'twitter:image','name'))||null;const article=extractMainText(html);return{json:{link:$json.realUrl,header:title,image,description:'',keywords:'',article,source_published_at:$json.rssPublished||null,collected_at:new Date().toISOString()}}});"
+      },
+      "id": "FN_Extract_Cron",
+      "name": "FN: Extract (Cron)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1700, 540]
+    },
+    {
+      "parameters": {
+        "operation": "chat",
+        "openAIApi": {
+          "authentication": "predefinedCredentialType",
+          "credential": "OpenAI (Seisbook)"
+        },
+        "model": "={{$env.OPENAI_MODEL || \"gpt-4o-mini\"}}",
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": "={{$env.OPENAI_MAX_TOKENS || 1200}}"
+        },
+        "messages": {
+          "message": [
+            {
+              "text": "Rewrite the following marine seismic news article to be fresh wording (plagiarism-safe) while strictly preserving facts and meaning. Keep proper nouns and quotes intact where possible. Remove tracking junk/boilerplate. Respond with ONLY the rewritten article text.\n\nArticle:\n{{$json.article}}",
+              "type": "user"
+            }
+          ]
+        }
+      },
+      "id": "OpenAI_Rewrite_Cron",
+      "name": "OpenAI: Rewrite (Cron)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 4,
+      "position": [1940, 540]
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map(item => {const rewritten=item.json.choices?.[0]?.message?.content||item.json.data||item.json.text||'';const original=$json.article||'';return{json:{...$json,article:(rewritten&&rewritten.length>100)?rewritten:original}}});"
+      },
+      "id": "FN_ApplyRewrite_Cron",
+      "name": "FN: Apply Rewrite (Cron)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [2180, 540]
+    },
+    {
+      "parameters": {
+        "mode": "passThrough",
+        "mergeByFields": {}
+      },
+      "id": "Merge_Sink",
+      "name": "Merge (Cron sink)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [2420, 540]
+    }
+  ],
+  "connections": {
+    "Webhook: Export": {
+      "main": [[{ "node": "IF: Secret OK", "type": "main", "index": 0 }]]
+    },
+    "IF: Secret OK": {
+      "main": [
+        [{ "node": "HTTP: Google Alerts RSS", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "HTTP: Google Alerts RSS": {
+      "main": [[{ "node": "RSS: Parse from Raw", "type": "main", "index": 0 }]]
+    },
+    "RSS: Parse from Raw": {
+      "main": [[{ "node": "FN: Resolve Real URL", "type": "main", "index": 0 }]]
+    },
+    "FN: Resolve Real URL": {
+      "main": [[{ "node": "IF: Keep HTTP(S)", "type": "main", "index": 0 }]]
+    },
+    "IF: Keep HTTP(S)": {
+      "main": [
+        [{ "node": "HTTP: Fetch Article HTML", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "HTTP: Fetch Article HTML": {
+      "main": [
+        [{ "node": "FN: Extract (Built-in)", "type": "main", "index": 0 }]
+      ]
+    },
+    "FN: Extract (Built-in)": {
+      "main": [
+        [{ "node": "OpenAI: Rewrite Article", "type": "main", "index": 0 }]
+      ]
+    },
+    "OpenAI: Rewrite Article": {
+      "main": [[{ "node": "FN: Apply Rewrite", "type": "main", "index": 0 }]]
+    },
+    "FN: Apply Rewrite": {
+      "main": [[{ "node": "Item Lists: Limit", "type": "main", "index": 0 }]]
+    },
+    "Item Lists: Limit": {
+      "main": [[{ "node": "FN: Build Response", "type": "main", "index": 0 }]]
+    },
+    "FN: Build Response": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    },
+    "Cron: 3×/day": {
+      "main": [[{ "node": "HTTP: RSS (Cron)", "type": "main", "index": 0 }]]
+    },
+    "HTTP: RSS (Cron)": {
+      "main": [[{ "node": "RSS: Parse (Cron)", "type": "main", "index": 0 }]]
+    },
+    "RSS: Parse (Cron)": {
+      "main": [
+        [{ "node": "FN: Resolve URL (Cron)", "type": "main", "index": 0 }]
+      ]
+    },
+    "FN: Resolve URL (Cron)": {
+      "main": [
+        [{ "node": "IF: Keep HTTP(S) (Cron)", "type": "main", "index": 0 }]
+      ]
+    },
+    "IF: Keep HTTP(S) (Cron)": {
+      "main": [
+        [{ "node": "HTTP: Fetch Article (Cron)", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "HTTP: Fetch Article (Cron)": {
+      "main": [[{ "node": "FN: Extract (Cron)", "type": "main", "index": 0 }]]
+    },
+    "FN: Extract (Cron)": {
+      "main": [
+        [{ "node": "OpenAI: Rewrite (Cron)", "type": "main", "index": 0 }]
+      ]
+    },
+    "OpenAI: Rewrite (Cron)": {
+      "main": [
+        [{ "node": "FN: Apply Rewrite (Cron)", "type": "main", "index": 0 }]
+      ]
+    },
+    "FN: Apply Rewrite (Cron)": {
+      "main": [[{ "node": "Merge (Cron sink)", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "saveExecutionProgress": true },
+  "pinData": {}
+}

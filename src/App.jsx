@@ -4,17 +4,24 @@ import { I18nProvider } from "./context/I18nContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Loading from "./components/Loading";
+import DebitCredit from "./pages/DebitCredit";
 
 // Lazy load pages for better performance
 const HomePage = lazy(() => import("./pages/HomePage"));
 const EvolutionPage = lazy(() => import("./pages/EvolutionPage"));
 const MissionPage = lazy(() => import("./pages/MissionPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
-const DonatePage = lazy(() => import("./pages/DonatePage"));
-const PartnerPage = lazy(() => import("./pages/PartnerPage"));
-const OtherWaysPage = lazy(() => import("./pages/OtherWaysPage"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
+const DonatePage = lazy(() => import("./pages/DebitCredit"));
+const BankTransfer = lazy(() => import("./pages/BankTransfer"));
+const Crypto = lazy(() => import("./pages/Crypto"));
+const UACard = lazy(() => import("./pages/UACard"));
 
+const PartnerPage = lazy(() => import("./pages/PartnerPage"));
+
+const OtherWaysPage = lazy(() => import("./pages/OtherWaysPage"));
+const MajorGift = lazy(() => import("./pages/MajorGift"));
+const HelpEquipment = lazy(() => import("./pages/HelpEquipment"));
 // Scroll to top on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -86,22 +93,19 @@ function AppContent() {
             <Route path="/contact" element={<ContactPage />} />
 
             {/* Donate routes */}
-            <Route path="/donate" element={<DonatePage />} />
-            <Route path="/donate/bank-transfer" element={<DonatePage />} />
-            <Route path="/donate/crypto" element={<DonatePage />} />
-            <Route path="/donate/debit-credit" element={<DonatePage />} />
-            <Route path="/donate/ua-debit-credit" element={<DonatePage />} />
+            <Route path="/donate" element={<DebitCredit />} />
+            <Route path="/donate-by-bank-transfer" element={<BankTransfer />} />
+            <Route path="/send-crypto" element={<Crypto />} />
+            <Route path="/help" element={<DebitCredit />} />
+            <Route path="/donate-ua-card" element={<UACard />} />
 
             {/* Partner route */}
             <Route path="/partner" element={<PartnerPage />} />
 
             {/* Other ways routes */}
             <Route path="/other-ways" element={<OtherWaysPage />} />
-            <Route path="/other-ways/make-gift" element={<OtherWaysPage />} />
-            <Route
-              path="/other-ways/help-equipment"
-              element={<OtherWaysPage />}
-            />
+            <Route path="/make-a-major-gift" element={<MajorGift />} />
+            <Route path="/help-with-equipment" element={<HelpEquipment />} />
 
             {/* Legal route */}
             <Route path="/legal" element={<LegalPage />} />

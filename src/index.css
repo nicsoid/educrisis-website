@@ -1,8 +1,20 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
-
+/* src/index.css */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  font-family: "Poppins", sans-serif;
+  color: #002866;
+}
+
+/* Menu Items Base Styles */
+.menu-item {
+  @apply px-4 py-2 transition-all duration-300 rounded-md;
+  color: #002866;
+  position: relative;
+}
 
 * {
   margin: 0;
@@ -18,4 +30,171 @@ body {
 
 .container {
   max-width: 1200px;
+}
+
+.containermain {
+  max-width: 1200px;
+}
+
+.menu-item:hover,
+.menu-item.active {
+  background-color: #ffee00;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* CRITICAL FIX: Remove gaps and maintain hover state */
+.dropdown-container {
+  position: relative;
+}
+
+/* Remove the gap between trigger and dropdown */
+.dropdown-menu {
+  /* No margin-top to eliminate gap */
+  position: absolute;
+  top: 100%; /* Directly attached to parent */
+  left: 0;
+  z-index: 50;
+}
+
+/* Add invisible bridge to maintain hover when moving to dropdown */
+.dropdown-container::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 10px; /* Invisible bridge height */
+  display: block;
+  z-index: 49; /* Below dropdown but above everything else */
+}
+
+/* Dropdown Items */
+.dropdown-item {
+  @apply px-4 py-3 hover:bg-gray-100 transition-colors duration-200;
+  color: #002866;
+  display: block;
+  white-space: nowrap;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255, 238, 0, 0.2);
+}
+
+/* Submenu Container Fixes */
+.submenu-container {
+  position: relative;
+}
+
+/* Critical: Remove gap between menu item and submenu */
+.submenu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  /* No margin-left to eliminate gap */
+  z-index: 51;
+}
+
+/* Add invisible bridge for submenus */
+.submenu-container::before {
+  content: "";
+  position: absolute;
+  left: 100%;
+  top: 0;
+  bottom: 0;
+  width: 10px; /* Invisible bridge width */
+  display: block;
+  z-index: 50;
+}
+
+/* Optional: Add slight overlap for better UX */
+.submenu {
+  left: calc(100% - 2px); /* 2px overlap */
+}
+
+/* Fade animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    background-color: transparent;
+  }
+  to {
+    opacity: 1;
+    background-color: #ffee00;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    background-color: #ffee00;
+  }
+  to {
+    opacity: 0;
+    background-color: transparent;
+  }
+}
+
+/* Mobile menu items */
+.mobile-menu-item {
+  @apply block px-4 py-2 hover:bg-gray-100;
+  color: #002866;
+}
+
+/* Footer styles */
+/* footer {
+  background-color: #002866;
+  color: white;
+}
+
+footer a {
+  @apply hover:underline transition-all duration-200;
+}
+
+footer a:hover {
+  color: #ffee00;
+} */
+
+footer {
+  /* Remove any background color from footer element itself */
+}
+
+.footer-link {
+  @apply transition-colors duration-200;
+}
+
+.footer-link:hover {
+  color: #ffcc00 !important;
+}
+/* Newsletter input */
+.newsletter-input {
+  @apply px-4 py-2 rounded-l-md focus:outline-none focus:ring-2 text-gray-800;
+}
+
+.newsletter-button {
+  @apply px-4 py-2 rounded-r-md font-medium transition-colors duration-200;
+  background-color: #ffee00;
+  color: #002866;
+}
+
+.newsletter-button:hover {
+  background-color: #ffd700;
+}
+
+/* Page content */
+.page-content {
+  @apply min-h-screen py-12 px-4;
+}
+
+.page-title {
+  @apply text-4xl font-bold mb-8;
+  color: #002866;
+}
+
+/* Optional: Delay before hiding dropdown for better UX */
+.dropdown-menu {
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+.dropdown-container:not(:hover) .dropdown-menu {
+  transition-delay: 0.1s; /* Small delay before hiding */
 }

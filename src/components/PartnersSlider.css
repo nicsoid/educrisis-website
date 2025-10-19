@@ -1,0 +1,31 @@
+/* src/components/PartnersSlider.css */
+
+/* Define the horizontal scroll animation */
+@keyframes scroll-left {
+  from {
+    /* Start position */
+    transform: translateX(0);
+  }
+  to {
+    /* End position: moves exactly one set of logos to the left */
+    transform: translateX(-50%);
+  }
+}
+
+.slider-track {
+  /* Apply the animation */
+  animation: scroll-left 40s linear infinite; /* 40s is the speed */
+}
+
+/* PAUSE the animation when the user interacts with the slider container */
+/* We target the parent's hover state using the 'group' class if we used Tailwind's group-hover, 
+   but for simplicity, we target the track itself if it's the element being hovered, or adjust to target the parent container's hover state if required. 
+   In this setup, we assume the user will be hovering over the logos/track. */
+.slider-track:hover {
+  animation-play-state: paused;
+}
+
+/* Hide scrollbar for the scrollable container */
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
